@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  createdAt        DateTime          @default(now())
+  email            String
+  hash             String
+  profile          Profile?
+  invited          UsersOnAccounts[] @relation(name: "assigned_by")
+  accounts         UsersOnAccounts[] @relation(name: "self_user")
+  // created_acconuts Account[] @relation(fields: [createdAccountId], references: [id])
+  created_acconuts Account[]         @relation(name: "created")
+  // createdAccountId Int
+  // owner_of_acconts Account[] @relation(fields: [ownedAccountId], references: [id])
+  owner_of_acconts Account[]         @relation(name: "owned")
+  // ownedAccountId Int
+  integrations     Int[] // id скриптов на юзере в сервисе script_saver
+}
+
+model Profile {
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+}
+
+model Account {
+  id           String            @id @default(uuid())
+  createdAt    DateTime          @default(now())
+  account_name String?
+  creator      User              @relation(name: "created", fields: [creatorId], references: [id])
+  creatorId    String
+  owner        User              @relation(name: "owned", fields: [ownerId], references: [id])
+  ownerId      String
+  users        UsersOnAccounts[]
+  integrations Int[] // id скриптов на аккаунте в сервисе script_saver
+}
+
+model UsersOnAccounts {
+  user       User     @relation(name: "self_user", fields: [userId], references: [id])
+  userId     String // relation scalar field (used in the `@relation` attribute above)
+  account    Account  @relation(fields: [accountId], references: [id])
+  accountId  String // relation scalar field (used in the `@relation` attribute above)
+  assignedAt DateTime @default(now())
+  assignedBy User?    @relation(name: "assigned_by", fields: [assigneeId], references: [id])
+  assigneeId String?
+  active     Boolean  @default(false)
+
+  @@id([userId, accountId])
+}
+
+// model Integration {
+//   id               Int      @id @default(autoincrement())
+//   name             String
+//   createdAt        DateTime @default(now())
+//   account          Account  @relation(fields: [accountId], references: [id])
+//   accountId        Int
+//   creator          User     @relation(fields: [userId], references: [id])
+//   userId           Int
+//   relatedServiceId Int?  // типо то от чего скопированно
+// }
